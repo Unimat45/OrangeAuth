@@ -1,15 +1,33 @@
 import { isNil } from "lodash-es";
-import Cookies from "universal-cookie";
 import { IProvider } from "./IProvider";
-import type { ConfigOptions } from "../lib";
+import type { __internal__Options } from "../lib";
 import type { Session } from "../@types/globals";
 
+/**
+ * Configuration options of the Credentials provider
+ */
 export type CredentialsConfig<TCredentials extends string> = Readonly<{
+    /**
+     * The name of this provider, should not be changed unless you are
+     * using multiple instance of the same provider.
+     */
     name?: "credentials" | (string & {});
+    /**
+     * The available fields coming from the request containing credentials.
+     */
     credentials: TCredentials[];
+    /**
+     * Function that gets called when a user tries to login.
+     * This is where you should look inside your database for the user.
+     * @param credentials An object containing the credentials from the request's body.
+     * @returns A session object if a user is found, or `null`.
+     */
     authorize: (credentials: Record<TCredentials, string>) => MaybePromise<Session | null>;
 }>;
 
+/**
+ * Provider used to login a user using basic credentials.
+ */
 export class Credentials<TCredentials extends string = string> extends IProvider {
     private config: CredentialsConfig<TCredentials>;
 
@@ -18,21 +36,19 @@ export class Credentials<TCredentials extends string = string> extends IProvider
         this.config = config;
     }
 
-    public override async getSession(req: Request, globalCfg: ConfigOptions): Promise<Session | null> {
-        const cookies = new Cookies(req.headers.get("cookie"));
-
-        const token = cookies.get(globalCfg.cookieName);
-        if (token == null) return null;
-
-        return globalCfg.strategy.deserialize(token, globalCfg);
+    public override async getSession(): Promise<Session | null> {
+        throw new Error("This should never be used");
     }
 
-    public override async logIn(req: Request, globalCfg: ConfigOptions): Promise<string | null> {
+    public override async logIn(req: Request, globalCfg: __internal__Options): Promise<string | null> {
+        // We assume the  body is json here, might change that later to be more flexible
         const body = (await req.json()) as Record<TCredentials, string>;
 
+        // Calls the user defined authorize callback
         const session = await this.config.authorize(body);
         if (isNil(session)) return null;
 
+        // Create a token
         return globalCfg.strategy.serialize(session, globalCfg);
     }
 }

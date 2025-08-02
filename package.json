@@ -1,10 +1,13 @@
 {
     "name": "orange-auth",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "type": "module",
     "description": "Simple modular auth library",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "build": "tsc"
     },
