@@ -1,0 +1,46 @@
+{
+    "compilerOptions": {
+        "incremental": true,
+
+        "target": "es2022",
+        "lib": ["dom", "dom.iterable", "ES2022"],
+
+        "module": "es2022",
+        "moduleResolution": "bundler",
+        "resolveJsonModule": true,
+
+        "checkJs": true,
+
+        "declaration": true,
+        "declarationMap": true,
+        "outDir": "dist",
+        "rootDir": "src",
+        "removeComments": true,
+        "importHelpers": true,
+        "newLine": "lf",
+
+        "verbatimModuleSyntax": true,
+        "erasableSyntaxOnly": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+
+        "strict": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "strictPropertyInitialization": true,
+        "noImplicitThis": true,
+        "useUnknownInCatchVariables": true,
+        "alwaysStrict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": true,
+
+        "skipLibCheck": true
+    },
+    "include": ["src/**/*.ts", "eslint.config.ts"]
+}

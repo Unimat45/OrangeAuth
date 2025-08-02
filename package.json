@@ -1,0 +1,30 @@
+{
+    "name": "orange-auth",
+    "version": "0.0.0",
+    "type": "module",
+    "description": "Simple modular auth library",
+    "main": "dist/lib.js",
+    "types": "dist/lib.d.ts",
+    "scripts": {
+        "build": "tsc"
+    },
+    "author": "Mathieu Dery mathieu.dery@bananastreaming.ca",
+    "license": "MIT",
+    "devDependencies": {
+        "@eslint/js": "^9.31.0",
+        "@types/jsonwebtoken": "^9.0.10",
+        "@types/lodash-es": "^4.17.12",
+        "@types/node": "^24.0.15",
+        "eslint-plugin-prettier": "^5.5.3",
+        "tslib": "^2.8.1",
+        "typescript": "^5.8.3",
+        "typescript-eslint": "^8.37.0"
+    },
+    "dependencies": {
+        "@universal-middleware/core": "^0.4.8",
+        "cookie": "^1.0.2",
+        "jsonwebtoken": "^9.0.2",
+        "lodash-es": "^4.17.21",
+        "universal-cookie": "^8.0.1"
+    }
+}
