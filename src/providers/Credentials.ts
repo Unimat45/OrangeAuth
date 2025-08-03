@@ -1,7 +1,7 @@
 import { isNil } from "lodash-es";
 import { IProvider } from "./IProvider";
-import type { __internal__Options } from "../lib";
-import type { Session } from "../@types/globals";
+import type { Session, MaybePromise } from "../@types/globals";
+import type { ConfigOptions } from "../@types/internals";
 
 /**
  * Configuration options of the Credentials provider
@@ -32,7 +32,7 @@ export class Credentials<TCredentials extends string = string> extends IProvider
     private config: CredentialsConfig<TCredentials>;
 
     constructor(config: CredentialsConfig<TCredentials>) {
-        super("credentials");
+        super(config.name ?? "credentials");
         this.config = config;
     }
 
@@ -40,7 +40,7 @@ export class Credentials<TCredentials extends string = string> extends IProvider
         throw new Error("This should never be used");
     }
 
-    public override async logIn(req: Request, globalCfg: __internal__Options): Promise<string | null> {
+    public override async logIn(req: Request, globalCfg: ConfigOptions): Promise<string | null> {
         // We assume the  body is json here, might change that later to be more flexible
         const body = (await req.json()) as Record<TCredentials, string>;
 
