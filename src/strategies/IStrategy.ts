@@ -1,5 +1,5 @@
-import type { __internal__Options } from "../lib";
 import { type Session } from "../@types/globals";
+import type { ConfigOptions } from "../@types/internals";
 
 /**
  * A strategy is used to handle the creation, validation and accessing a user's session.
@@ -11,7 +11,7 @@ abstract class IStrategy {
      * @param globalCfg The global auth config.
      * @returns A newly generated token that will be sent as a cookie.
      */
-    public abstract serialize(session: Session, globalCfg: __internal__Options): Promise<string>;
+    public abstract serialize(session: Session, globalCfg: ConfigOptions): Promise<string>;
 
     /**
      * Handles how a token is validated and deserialized into a session object.
@@ -19,14 +19,14 @@ abstract class IStrategy {
      * @param globalCfg The global auth config.
      * @returns A user's session if validated and found, else `null`.
      */
-    public abstract deserialize(token: string, globalCfg: __internal__Options): Promise<Session | null>;
+    public abstract deserialize(token: string, globalCfg: ConfigOptions): Promise<Session | null>;
 
     /**
      * Handles how a session is destroyed when a user is logging out.
      * @param req The request object.
      * @param globalCfg The global auth config.
      */
-    public abstract logOut(req: Request, globalCfg: __internal__Options): Promise<void>;
+    public abstract logOut(req: Request, globalCfg: ConfigOptions): Promise<void>;
 }
 
 export { IStrategy };

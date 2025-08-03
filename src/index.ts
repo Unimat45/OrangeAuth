@@ -1,3 +1,4 @@
 export * from "./lib";
-export * from "./providers";
-export * from "./strategies";
+export * from "./@types/globals";
+export * as providers from "./providers";
+export * as strategies from "./strategies";

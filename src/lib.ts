@@ -8,6 +8,17 @@ import { type UniversalHandler, type Get, params } from "@universal-middleware/c
 
 type Maybe<T> = T | null | undefined;
 
+if (!globalThis.crypto) {
+    /**
+     * Polyfill needed if this code runs on node18
+     */
+    Object.defineProperty(globalThis, "crypto", {
+        value: await import("node:crypto").then((crypto) => crypto.webcrypto as Crypto),
+        writable: false,
+        configurable: true,
+    });
+}
+
 /**
  * Auth Configuration props.
  */
@@ -21,7 +32,7 @@ export type ConfigOptionsProps = Readonly<{
     /**
      * Your secret key.
      */
-    secret: string;
+    secret: string | { publicKey: string; privateKey: string };
 
     /**
      * A custom name for the cookie.
@@ -39,11 +50,13 @@ export type ConfigOptionsProps = Readonly<{
      * @example
      * ```js
      * const app = express();
+     * 
+     * const { handler } = CreateAuth({
+     *   basePath: "/api/auth/:action/:provider",
+     *   ...
+     * });
      *
-     * app.all("/api/auth/{*auth}", createHandler(CreateAuth)({
-     *      basePath: "/api/auth/:action/:provider",
-     *      ...
-     * }))
+     * app.all("/api/auth/{*auth}", createHandler(handler)());
      * ```
      */
     basePath: string;
@@ -55,19 +68,10 @@ export type ConfigOptionsProps = Readonly<{
 }>;
 
 /**
- * Internally used version of the options
+ * Access a user's session.
+ * @param req Something that has a `headers` field; either a Headers instance, or just a plain object.
+ * @returns A session if found and valid, or `null`.
  */
-export type __internal__Options = Required<Omit<ConfigOptionsProps, "basePath">>;
-
-// Default config, only set otherwise `assign` doesn't like it.
-let globalCfg: __internal__Options = {
-    cookieName: "orange.auth",
-    providers: [],
-    secret: crypto.randomUUID(),
-    strategy: null! as IStrategy,
-    cookieSettings: {},
-};
-
 export const CreateAuth = ((config: ConfigOptionsProps) => {
     const { secret, strategy, cookieName, providers, cookieSettings, basePath } = config;
 
@@ -81,7 +85,7 @@ export const CreateAuth = ((config: ConfigOptionsProps) => {
 
     // We set the global config on startup, and not on the route handler,
     // otherwise a session cannot be accessed until someone logs in
-    assign(globalCfg, {
+    const globalCfg = {
         cookieName: cookieName ?? "orange.auth",
         providers: providers ?? [],
         secret,
@@ -93,78 +97,97 @@ export const CreateAuth = ((config: ConfigOptionsProps) => {
             secure: true,
             maxAge: 3600,
         },
-    });
+    } as const;
 
-    return async (req, _, runtime) => {
-        // Tries to get the action and provider info from the url
-        const routeParams = params(req, runtime, basePath);
+    return {
+        handler: () => async (req, _, runtime) => {
+            // Tries to get the action and provider info from the url
+            const routeParams = params(req, runtime, basePath);
 
-        if (isNil(routeParams?.["action"]) || isNil(routeParams["provider"])) {
-            throw new Error(
-                '[ERROR]: Base path is missing! Make sure to set the "basePath" variable in the auth\'s config.',
-            );
-        }
-
-        // Finds the requested provider by name
-        const path = routeParams["provider"];
-        const provider = find(providers, (p) => p.ID === path);
-
-        if (isNil(provider)) {
-            return new Response("Page not found", { status: 404 });
-        }
-
-        // Handles each action independently
-        switch (routeParams["action"] as Actions) {
-            case "login": {
-                // Use the found provider to login
-                const token = await provider.logIn(req, globalCfg).catch(() => null);
-
-                // If failed, return Bad Request response
-                if (isNil(token)) return new Response(null, { status: 400 });
-
-                // Creates the set-cookie header
-                const headers = new Headers();
-                headers.set("Set-Cookie", cookie(globalCfg.cookieName, token, globalCfg.cookieSettings));
-
-                // And returns it
-                return new Response(null, { status: 200, headers });
+            if (isNil(routeParams?.["action"]) || isNil(routeParams["provider"])) {
+                throw new Error(
+                    '[ERROR]: Base path is missing! Make sure to set the "basePath" variable in the auth\'s config.',
+                );
             }
-            case "logout": {
-                // Use the strategy  to logout
-                await globalCfg.strategy.logOut(req, globalCfg);
 
-                // Clears the header.
-                const headers = new Headers();
-                headers.set("Set-Cookie", cookie(globalCfg.cookieName, ""));
+            // Finds the requested provider by name
+            const path = routeParams["provider"];
+            const provider = find(providers, (p) => p.ID === path);
 
-                // And send them
-                return new Response(null, { status: 200, headers });
-            }
-            default:
-                // If a wrong action is requested, return a 404
+            if (isNil(provider)) {
                 return new Response("Page not found", { status: 404 });
-        }
+            }
+
+            // Handles each action independently
+            switch (routeParams["action"] as Actions) {
+                case "login": {
+                    // Use the found provider to login
+                    const token = await provider.logIn(req, globalCfg).catch(() => null);
+
+                    // If failed, return Bad Request response
+                    if (isNil(token)) return new Response(null, { status: 400 });
+
+                    // Creates the set-cookie header
+                    const headers = new Headers();
+                    headers.set("Set-Cookie", cookie(globalCfg.cookieName, token, globalCfg.cookieSettings));
+
+                    // And returns it
+                    return new Response(null, { status: 200, headers });
+                }
+                case "logout": {
+                    // Use the strategy  to logout
+                    await globalCfg.strategy.logOut(req, globalCfg);
+
+                    // Clears the header.
+                    const headers = new Headers();
+                    headers.set(
+                        "Set-Cookie",
+                        cookie(
+                            globalCfg.cookieName,
+                            "deleted",
+                            // Use the same cookie config, but make sure it is expired
+                            assign({}, globalCfg.cookieSettings, {
+                                expires: new Date(0),
+                                maxAge: undefined,
+                            }),
+                        ),
+                    );
+
+                    // And send them
+                    return new Response(null, { status: 200, headers });
+                }
+                default:
+                    // If a wrong action is requested, return a 404
+                    return new Response("Page not found", { status: 404 });
+            }
+        },
+
+        getSession: async <T extends Session = Session>(req: { headers: Maybe<Headers | Record<string, string>> }) => {
+            if (isNil(req.headers)) return null;
+
+            // Here, it always outputs the original state
+            // console.log(ConfigManager.get());
+
+            // Find the correct cookie header
+            const cookieHeader = req.headers instanceof Headers ? req.headers.get("cookie") : req.headers["cookie"];
+
+            const cookie = new Cookies(cookieHeader);
+            if (isNil(cookie)) return null;
+
+            // Tries to extract the specific cookie.
+            const token = cookie.get(globalCfg.cookieName);
+            if (isNil(token)) return null;
+
+            // Tries to deserialize it
+            return globalCfg.strategy.deserialize(token, globalCfg) as Promise<T | null>;
+        },
     };
-}) satisfies Get<[config: ConfigOptionsProps], UniversalHandler>;
-
-/**
- * Access a user's session.
- * @param req Something that has a `headers` field; either a Headers instance, or just a plain object.
- * @returns A session if found and valid, or `null`.
- */
-export const getSession = <T extends Session = Session>(req: { headers: Maybe<Headers | Record<string, string>> }) => {
-    if (isNil(req.headers)) return null;
-
-    // Find the correct cookie header
-    const cookieHeader = req.headers instanceof Headers ? req.headers.get("cookie") : req.headers["cookie"];
-
-    const cookie = new Cookies(cookieHeader);
-    if (isNil(cookie)) return null;
-
-    // Tries to extract the specific cookie.
-    const token = cookie.get(globalCfg.cookieName);
-    if (isNil(token)) return null;
-
-    // Tries to deserialize it
-    return globalCfg.strategy.deserialize(token, globalCfg) as Promise<T | null>;
-};
+}) satisfies Get<
+    [config: ConfigOptionsProps],
+    {
+        handler: Get<[], UniversalHandler>;
+        getSession: <T extends Session = Session>(req: {
+            headers: Maybe<Headers | Record<string, string>>;
+        }) => Promise<T | null>;
+    }
+>;

@@ -1,10 +1,4 @@
-import {
-    verify as baseVerify,
-    type JwtPayload,
-    type PublicKey,
-    type Secret,
-    type VerifyOptions,
-} from "jsonwebtoken";
+import { verify as baseVerify, type JwtPayload, type PublicKey, type Secret, type VerifyOptions } from "jsonwebtoken";
 
 // The sign function is fine as-is
 export { sign } from "jsonwebtoken";
@@ -29,4 +23,3 @@ export function verify<T extends JwtPayload = JwtPayload>(
         });
     });
 }
-

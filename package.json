@@ -1,6 +1,6 @@
 {
     "name": "orange-auth",
-    "version": "0.1.2",
+    "version": "1.0.0",
     "type": "module",
     "description": "Simple modular auth library",
     "main": "dist/index.js",
@@ -8,6 +8,16 @@
     "files": [
         "dist"
     ],
+    "exports": {
+        ".": {
+            "require": "./dist/index.js",
+            "default": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        },
+        "./strategies": "./dist/strategies/index.js",
+        "./providers": "./dist/providers/index.js",
+        "./functions": "./dist/functions/index.js"
+    },
     "scripts": {
         "build": "tsc"
     },

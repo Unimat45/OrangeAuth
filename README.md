@@ -1,118 +1,177 @@
 # 🍊 Orange Auth
 
-### THIS IS A VERY EARLY WIP, AND SHOULD NOT BE USED
+### THIS IS A VERY EARLY WIP, AND SHOULD NOT BE USED IN PRODUCTION
 
-A lightweight authentication handler built for [@universal-middleware/core](https://www.npmjs.com/package/@universal-middleware/core), with support for plug-and-play providers and strategies. This package manages login/logout and session deserialization through HTTP handlers and secure cookies.
+Authentication middleware for [@universal-middleware/core](https://www.npmjs.com/package/@universal-middleware/core), supporting provider-based login/logout and strategy-driven session handling via secure cookies.
 
----
+## 🚀 Features
 
-## ✨ Features
+- Provider-based login/logout flow
+- Pluggable strategies (e.g. JWT)
+- Secure cookie-based session storage
+- Simple, composable handler with session retrieval
+- Optional cookie settings
+- Framework-agnostic
 
-- Provider-based authentication (e.g., Credentials, OAuth)
-- Strategy-based token serialization and deserialization (e.g., JWT)
-- Secure, HTTP-only cookie session management
-- Framework-agnostic and middleware-compatible
-- Written in TypeScript
-
----
-
-## 📦 Installation
+## 📦 Install
 
 ```bash
-npm install universal-auth
+npm install orange-auth
 ```
 
-📁 Project Structure
+## 🧠 Usage
 
-```bash
-src/
-├── @types/          # Custom type definitions (e.g., Session)
-├── functions/       # Utility functions
-├── providers/       # Implementations of IProvider
-├── strategies/      # Implementations of IStrategy
-├── lib.ts           # Main exports
-```
-
-## 🚀 Usage
-
-### 1. Define your auth configuration:
+### Setup
 
 ```ts
-import { CreateAuth } from "universal-auth";
-import { JwtStrategy } from "./strategies/jwt";
-import { CredentialsProvider } from "./providers/Credentials";
+import { CreateAuth } from "orange-auth";
+import { JWT } from "orange-auth/strategies";
+import { Credentials } from "orange-auth/providers";
 
-const handler = CreateAuth({
-  providers: [CredentialsProvider],
-  secret: "your-secret-key",
-  cookieName: "my-auth-cookie", // optional (default: "orange.auth")
-  strategy: JwtStrategy,
-  basePath: "/api/auth",
+const { handler, getSession } = CreateAuth({
+  providers: [new Credentials({ ... })],
+  strategy: new JWT({ ... }),
+  secret: "your-secret",
+  basePath: "/api/auth/:action/:provider",
 });
 ```
 
-This will expose two routes:
+You can now use:
+- `POST /api/auth/login/:provider`
+- `POST /api/auth/logout/:provider`
 
-`GET /api/auth/login/:provider`
-
-`GET /api/auth/logout/:provider`
-
-You must implement a matching `provider.ID`, e.g. `"credentials"`.
-
-### 2. Use in a universal middleware router:`
+### Example (express middleware router)
 
 ```ts
-import { router } from "@universal-middleware/core";
-import { handler as authHandler } from "./path-to-your-auth";
+import express from "express";
+import { handler } from "./auth";
+import { createHandler } from "@universal-middleware/express";
 
-export const app = router();
-app.use(authHandler);
+const app = express();
+app.get("/api/auth/{*auth}", createHandler(handler)());
 ```
 
-### 3. Getting the current session:
+## 🧾 Session Access
 
 ```ts
-import { getSession } from "universal-auth";
+import { getSession } from "./auth";
 
 const session = await getSession(req);
+
 if (session) {
-  console.log("Logged in as", session.user);
+  console.log("Logged in user:", session.user);
 }
 ```
 
-## 🧩 Interfaces
-
-`IProvider`
-
-Defines how to log in a user and return a token:
+## 🧩 Config Options
 
 ```ts
-interface IProvider {
-  ID: string;
-  logIn(req: Request, config: ConfigOptions): Promise<string>;
-}
+type ConfigOptionsProps = {
+    /**
+     * All the available providers.
+     * If multiple instance of a single provider are used with the same name, the order does matter.
+     */
+    providers: IProvider[];
+
+    /**
+     * Your secret key.
+     */
+    secret: string;
+
+    /**
+     * A custom name for the cookie.
+     * Otherwise, the default name will be `orange.auth`
+     */
+    cookieName?: string;
+
+    /**
+     * The strategy to be used.
+     */
+    strategy: IStrategy;
+
+    /**
+     * This should be the url path that your auth is set up on, including the action and provider variables.
+     * @example
+     * ```js
+     * const app = express();
+     * 
+     * const { handler } = CreateAuth({
+     *   basePath: "/api/auth/:action/:provider",
+     *   ...
+     * });
+     *
+     * app.all("/api/auth/{*auth}", createHandler(handler)());
+     * ```
+     */
+    basePath: string;
+
+    /**
+     * Cookie serialization options. see [MDN Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies)
+     */
+    cookieSettings?: SerializeOptions;
+};
 ```
 
-`IStrategy`
+## 🧱 Interfaces
 
-Defines how to serialize and deserialize tokens:
+### IProvider
 
 ```ts
-interface IStrategy {
-  deserialize(token: string, config: ConfigOptions): Promise<Session | null>;
-  logOut(req: Request, config: ConfigOptions): Promise<void>;
+abstract class IProvider {
+    /**
+     * Custom name for a provider
+     */
+    ID: string;
+
+    /**
+     * Login function. This is used to call all the login flows of each provider.
+     * For now, the request's body **MUST** be JSON.
+     * @param req The request object.
+     * @param globalCfg The global auth config.
+     */
+    logIn(req: Request, globalCfg: ConfigOptions): Promise<string | null>;
 }
 ```
 
-## 🔐 Security
-Cookies are set with:
+### IStrategy
 
-`HttpOnly: true`
+```ts
+abstract class IStrategy {
+    /**
+     * Handles how a session token is generated.
+     * @param session The validated session object.
+     * @param globalCfg The global auth config.
+     * @returns A newly generated token that will be sent as a cookie.
+     */
+    serialize(session: Session, globalCfg: ConfigOptions): Promise<string>;
 
-`SameSite: "Lax"`
+    /**
+     * Handles how a token is validated and deserialized into a session object.
+     * @param token A user's token.
+     * @param globalCfg The global auth config.
+     * @returns A user's session if validated and found, else `null`.
+     */
+    deserialize(token: string, globalCfg: ConfigOptions): Promise<Session | null>;
 
-`Secure: true`
+    /**
+     * Handles how a session is destroyed when a user is logging out.
+     * @param req The request object.
+     * @param globalCfg The global auth config.
+     */
+    logOut(req: Request, globalCfg: ConfigOptions): Promise<void>;
+}
+```
 
-`Max-Age: 600` (10 minutes)
+---
 
-You may customize these by modifying the `CreateAuth` implementation.
+## 🔐 Cookie Defaults
+
+By default, the cookie is:
+
+- `httpOnly: true`
+- `secure: true`
+- `sameSite: "lax"`
+- `path: "/"`
+- `maxAge: 3600` (1 hour)
+
+This can be customized via `cookieSettings` in the initial config.
