@@ -1,7 +1,7 @@
 import { isNil } from "lodash-es";
 import { IProvider } from "./IProvider";
-import type { Session, MaybePromise } from "../@types/globals";
 import type { ConfigOptions } from "../@types/internals";
+import type { Session, MaybePromise } from "../@types/globals";
 
 /**
  * Configuration options of the Credentials provider
@@ -34,10 +34,6 @@ export class Credentials<TCredentials extends string = string> extends IProvider
     constructor(config: CredentialsConfig<TCredentials>) {
         super(config.name ?? "credentials");
         this.config = config;
-    }
-
-    public override async getSession(): Promise<Session | null> {
-        throw new Error("This should never be used");
     }
 
     public override async logIn(req: Request, globalCfg: ConfigOptions): Promise<string | null> {
