@@ -1,4 +1,3 @@
-import type { Session } from "../@types/globals";
 import type { ConfigOptions } from "../@types/internals";
 
 /**
@@ -26,9 +25,6 @@ abstract class IProvider {
     public get ID(): string {
         return this.__ID;
     }
-
-    /** @deprecated You can use the top level `getSession` instead. */
-    public abstract getSession(req: Request, globalCfg: ConfigOptions): Promise<Session | null>;
 
     /**
      * Login function. This is used to call all the login flows of each provider.
