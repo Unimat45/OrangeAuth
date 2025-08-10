@@ -6,17 +6,6 @@ import { assign, find, isNil, isString, merge } from "lodash-es";
 import type { ConfigOptionsProps, Session } from "./@types/globals";
 import { type UniversalHandler, type Get, params } from "@universal-middleware/core";
 
-if (!globalThis.crypto) {
-    /**
-     * Polyfill needed if this code runs on node18
-     */
-    Object.defineProperty(globalThis, "crypto", {
-        value: await import("node:crypto").then((crypto) => crypto.webcrypto as Crypto),
-        writable: false,
-        configurable: true,
-    });
-}
-
 /**
  * Deserialize a user's session based of the headers
  * @param globalCfg The global auth config

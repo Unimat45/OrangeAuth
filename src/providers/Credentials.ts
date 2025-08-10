@@ -1,5 +1,6 @@
 import { isNil } from "lodash-es";
 import { IProvider } from "./IProvider";
+import { urlencodedToJson } from "../functions";
 import type { ConfigOptions } from "../@types/internals";
 import type { Session, MaybePromise } from "../@types/globals";
 
@@ -37,8 +38,26 @@ export class Credentials<TCredentials extends string = string> extends IProvider
     }
 
     public override async logIn(req: Request, globalCfg: ConfigOptions): Promise<string | null> {
-        // We assume the  body is json here, might change that later to be more flexible
-        const body = (await req.json()) as Record<TCredentials, string>;
+        const contentType = req.headers.get("Content-Type")?.split(";")[0] ?? "text/plain";
+
+        let body: Record<TCredentials, string>;
+
+        switch (contentType) {
+            case "application/json":
+                body = await req.json();
+                break;
+            case "application/x-www-urlencoded":
+                body = await req.text().then(urlencodedToJson<Record<TCredentials, string>>);
+                break;
+            case "multipart/form-data":
+                const data = await req.formData();
+                body = Object.fromEntries(data) as Record<TCredentials, string>;
+                break;
+            // fields should come from a form, so every un-supported types will be failing.
+            case "text/plain":
+            default:
+                return null;
+        }
 
         // Calls the user defined authorize callback
         const session = await this.config.authorize(body);

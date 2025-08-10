@@ -1,0 +1,93 @@
+import { JWT } from "../../src/strategies";
+import { describe, expect, test } from "vitest";
+import { ConfigOptions } from "../../src/@types/internals";
+
+describe("Test if the JWT strategy is working", () => {
+    test("Serializing", async () => {
+        const globalCfg: ConfigOptions = {
+            cookieName: "orange.auth",
+            secret: "secret-key",
+            cookieSettings: {},
+            strategy: new JWT(),
+            callbacks: {
+                login: () => false,
+                logout: () => {},
+            },
+            providers: [],
+        };
+
+        const token = await globalCfg.strategy.serialize({ id: "some user" }, globalCfg).catch(() => null);
+
+        expect(token).not.toBeNull();
+    });
+
+    test("deserializing valid token", async () => {
+        const globalCfg: ConfigOptions = {
+            cookieName: "orange.auth",
+            secret: "secret-key",
+            cookieSettings: {},
+            strategy: new JWT(),
+            callbacks: {
+                login: () => false,
+                logout: () => {},
+            },
+            providers: [],
+        };
+
+        const token = await globalCfg.strategy
+            .deserialize(
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InNvbWUgdXNlciIsImlhdCI6MTc1NDg0MDQ2MX0.wnfErbZrdWCmL32IXtu372dUsnE71BibnnjUQr35VQk",
+                globalCfg,
+            )
+            .catch(() => null);
+
+        expect(token).toMatchObject({
+            id: "some user",
+        });
+    });
+
+    test("deserializing invalid token", async () => {
+        const globalCfg: ConfigOptions = {
+            cookieName: "orange.auth",
+            secret: "secret-key",
+            cookieSettings: {},
+            strategy: new JWT(),
+            callbacks: {
+                login: () => false,
+                logout: () => {},
+            },
+            providers: [],
+        };
+
+        const token = await globalCfg.strategy
+            .deserialize(
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InNvbWUgdXNlciIsImlhdCI6MTc1NDg0MDk2N30.SbogyMRT-oEXUcCKXiVrDx_AAqon6Nf9ujQip6iRjsw",
+                globalCfg,
+            )
+            .catch(() => null);
+
+        expect(token).toBeFalsy();
+    });
+    test("deserializing expired token", async () => {
+        const globalCfg: ConfigOptions = {
+            cookieName: "orange.auth",
+            secret: "secret-key",
+            cookieSettings: {},
+            strategy: new JWT(),
+            callbacks: {
+                login: () => false,
+                logout: () => {},
+            },
+            providers: [],
+        };
+
+        const token = await globalCfg.strategy
+            .deserialize(
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InNvbWUgdXNlciIsImlhdCI6MTc1NDg0MTA1NCwiZXhwIjoxNzU0ODQxMDc5fQ.FcjpJW4sznO9W1aFYrxCpBsEhLv57m1iFX9qRx3tlJY",
+                globalCfg,
+            )
+            .catch(() => null);
+
+        expect(token).toBeFalsy();
+    });
+});

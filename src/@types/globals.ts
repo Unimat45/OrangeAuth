@@ -1,4 +1,4 @@
-import { type SerializeOptions } from "cookie";
+import type { SerializeOptions } from "cookie";
 import type { IProvider } from "../providers/IProvider";
 import type { IStrategy } from "../strategies/IStrategy";
 

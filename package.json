@@ -1,6 +1,6 @@
 {
     "name": "orange-auth",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "type": "module",
     "description": "Simple modular auth library",
     "main": "dist/index.js",
@@ -19,7 +19,8 @@
         "./functions": "./dist/functions/index.js"
     },
     "scripts": {
-        "build": "tsc"
+        "build": "tsc",
+        "test": "vitest"
     },
     "author": "Mathieu Dery mathieu.dery@bananastreaming.ca",
     "license": "MIT",
@@ -35,7 +36,8 @@
         "tslib": "^2.8.1",
         "type-fest": "^4.41.0",
         "typescript": "^5.8.3",
-        "typescript-eslint": "^8.37.0"
+        "typescript-eslint": "^8.37.0",
+        "vitest": "^3.2.4"
     },
     "dependencies": {
         "@universal-middleware/core": "^0.4.8",
