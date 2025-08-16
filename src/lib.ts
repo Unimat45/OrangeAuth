@@ -162,7 +162,7 @@ export const CreateAuth = ((config) => {
                         });
                     }
 
-                    // Use the strategy  to logout
+                    // Use the strategy to logout
                     await globalCfg.strategy.logOut(req, globalCfg);
 
                     // Clears the header.
