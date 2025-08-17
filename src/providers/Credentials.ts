@@ -64,6 +64,9 @@ export class Credentials<TCredentials extends string = string> extends IProvider
         if (isNil(session)) return null;
 
         // Create a token
-        return globalCfg.strategy.serialize(session, globalCfg);
+        return globalCfg.strategy.serialize(session, globalCfg).catch((err) => {
+            console.log(err);
+            return null;
+        });
     }
 }

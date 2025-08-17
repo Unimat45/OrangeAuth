@@ -21,6 +21,24 @@ describe("Test if the JWT strategy is working", () => {
         expect(token).not.toBeNull();
     });
 
+    test("Custom serializing callback force fail", async () => {
+        const globalCfg: ConfigOptions = {
+            cookieName: "orange.auth",
+            secret: "secret-key",
+            cookieSettings: {},
+            strategy: new JWT(undefined, { serialize: () => false }),
+            callbacks: {
+                login: () => false,
+                logout: () => {},
+            },
+            providers: [],
+        };
+
+        const token = await globalCfg.strategy.serialize({ id: "some user" }, globalCfg).catch(() => null);
+
+        expect(token).toBeNull();
+    });
+
     test("deserializing valid token", async () => {
         const globalCfg: ConfigOptions = {
             cookieName: "orange.auth",
@@ -44,6 +62,29 @@ describe("Test if the JWT strategy is working", () => {
         expect(token).toMatchObject({
             id: "some user",
         });
+    });
+
+    test("custom deserializing callback force fail", async () => {
+        const globalCfg: ConfigOptions = {
+            cookieName: "orange.auth",
+            secret: "secret-key",
+            cookieSettings: {},
+            strategy: new JWT(undefined, { deserialize: () => false }),
+            callbacks: {
+                login: () => false,
+                logout: () => {},
+            },
+            providers: [],
+        };
+
+        const token = await globalCfg.strategy
+            .deserialize(
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InNvbWUgdXNlciIsImlhdCI6MTc1NDg0MDQ2MX0.wnfErbZrdWCmL32IXtu372dUsnE71BibnnjUQr35VQk",
+                globalCfg,
+            )
+            .catch(() => null);
+
+        expect(token).toBeNull();
     });
 
     test("deserializing invalid token", async () => {
