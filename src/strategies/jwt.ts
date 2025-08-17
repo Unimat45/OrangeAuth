@@ -1,8 +1,8 @@
-import { isString } from "lodash-es";
-import { IStrategy } from "./IStrategy";
+import { isNil, isString } from "lodash-es";
 import { verify, sign } from "../functions/jwt";
 import type { SignOptions } from "jsonwebtoken";
 import type { Session } from "../@types/globals";
+import { IStrategy, type Callbacks } from "./IStrategy";
 import type { ConfigOptions } from "../@types/internals";
 
 /**
@@ -10,14 +10,14 @@ import type { ConfigOptions } from "../@types/internals";
  * @param secret Secret key, or key pair
  * @returns The secret or private key
  */
-const secretOrPrivateKey = (secret: ConfigOptions["secret"]) => isString(secret) ? secret : secret.privateKey;
+const secretOrPrivateKey = (secret: ConfigOptions["secret"]) => (isString(secret) ? secret : secret.privateKey);
 
 /**
  * Retrieves either the secret or a public key, depending on the used JWT algorithm
  * @param secret Secret key, or key pair
  * @returns The secret or public key
  */
-const secretOrPublicKey = (secret: ConfigOptions["secret"]) => isString(secret) ? secret : secret.publicKey;
+const secretOrPublicKey = (secret: ConfigOptions["secret"]) => (isString(secret) ? secret : secret.publicKey);
 
 /**
  * Basic JWT strategy
@@ -28,20 +28,31 @@ class JWT extends IStrategy {
      */
     private signOptions: SignOptions;
 
-    constructor(options: SignOptions = { expiresIn: "1h" }) {
-        super();
+    constructor(options: SignOptions = { expiresIn: "1h" }, callbacks: Callbacks = {}) {
+        super(callbacks);
 
         this.signOptions = options;
     }
 
-    public override serialize(session: Session, globalCfg: ConfigOptions): Promise<string> {
+    public override async serialize(session: Session, globalCfg: ConfigOptions): Promise<string> {
+        // If there is no callback set, we can just run normally, so fallback to true.
+        const shouldRun = await Promise.resolve(this.callbacks.serialize?.(session) ?? true);
+
+        if (!shouldRun) {
+            return Promise.reject("Serialize callback rejection");
+        }
+
         // Directly call the sign function, but make it async.
         return Promise.resolve(sign(session, secretOrPrivateKey(globalCfg.secret), this.signOptions));
     }
 
     public override deserialize(token: string, globalCfg: ConfigOptions): Promise<Session | null> {
         // The verify function does everything for us, in this case.
-        return verify(token, secretOrPublicKey(globalCfg.secret));
+        return verify<Session>(token, secretOrPublicKey(globalCfg.secret)).then(async (session) => {
+            if (isNil(session)) return null;
+            const isValid = await Promise.resolve(this.callbacks.deserialize?.(token, session) ?? true);
+            return isValid ? session : null;
+        });
     }
 
     public override logOut(): Promise<void> {
