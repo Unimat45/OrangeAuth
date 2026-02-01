@@ -1,6 +1,6 @@
 import type { MaybePromise, Session } from "../@types/globals";
 import type { ConfigOptions } from "../@types/internals";
-import { urlencodedToJson } from "../functions";
+import { urlencodedToJson } from "../functions/index";
 import { IProvider } from "./IProvider";
 
 /**
@@ -36,14 +36,17 @@ export class Credentials<TCredentials extends string = string> extends IProvider
         this.config = config;
     }
 
-    public override async logIn(req: Request, globalCfg: ConfigOptions): Promise<string | null> {
-        const contentType = req.headers.get("Content-Type")?.split(";")[0] ?? "text/plain";
+    public override async logIn(
+        req: Request,
+        globalCfg: ConfigOptions,
+    ): Promise<{ session: Session; token: string } | null> {
+        const contentType = (req.headers.get("Content-Type")?.split(";")[0] ?? "text/plain").toLowerCase();
 
         let body: Record<TCredentials, string>;
 
         switch (contentType) {
             case "application/json":
-                body = await req.json();
+                body = (await req.json()) as Record<TCredentials, string>;
                 break;
             case "application/x-www-urlencoded":
                 body = await req.text().then(urlencodedToJson<Record<TCredentials, string>>);
@@ -65,9 +68,13 @@ export class Credentials<TCredentials extends string = string> extends IProvider
         if (session == null) return null;
 
         // Create a token
-        return globalCfg.strategy.serialize(session, globalCfg).catch((err) => {
+        const token = await globalCfg.strategy.serialize(session, globalCfg).catch((err) => {
             console.log(err);
             return null;
         });
+
+        if (token == null) return null;
+
+        return { session, token };
     }
 }

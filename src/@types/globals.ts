@@ -1,7 +1,6 @@
-import type { SerializeOptions } from "cookie";
-
 import type { IProvider } from "../providers/IProvider";
 import type { IStrategy } from "../strategies/IStrategy";
+import type { CookieOptions } from "./cookies";
 
 /**
  * This is a Promise, or not...
@@ -46,7 +45,7 @@ export type ConfigOptionsProps = Readonly<{
     /**
      * Your secret key.
      */
-    secret: string | { publicKey: string; privateKey: string };
+    secret: string;
 
     /**
      * A custom name for the cookie.
@@ -78,7 +77,7 @@ export type ConfigOptionsProps = Readonly<{
     /**
      * Cookie serialization options. see [MDN Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies)
      */
-    cookieSettings?: SerializeOptions;
+    cookieSettings?: CookieOptions;
 
     /**
      * Custom callbacks

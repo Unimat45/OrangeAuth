@@ -1,3 +1,4 @@
+import type { Session } from "../@types/globals";
 import type { ConfigOptions } from "../@types/internals";
 
 /**
@@ -32,7 +33,7 @@ abstract class IProvider {
      * @param req The request object.
      * @param globalCfg The global auth config.
      */
-    public abstract logIn(req: Request, globalCfg: ConfigOptions): Promise<string | null>;
+    public abstract logIn(req: Request, globalCfg: ConfigOptions): Promise<{ session: Session; token: string } | null>;
 }
 
 export { IProvider };

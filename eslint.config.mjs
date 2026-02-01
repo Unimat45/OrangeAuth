@@ -8,6 +8,7 @@ export default defineConfig(
     {
         ignores: [
             "dist/*",
+            "node_modules/*",
             // Temporary compiled files
             "**/*.ts.build-*.mjs",
         ],

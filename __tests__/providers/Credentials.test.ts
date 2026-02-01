@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test } from "bun:test";
 
 import { ConfigOptions } from "../../src/@types/internals";
 import { verify } from "../../src/functions";
@@ -31,11 +31,13 @@ describe("Tests if the credentials provider works", () => {
             body: JSON.stringify({ email: "bob.b@somedomain.com", password: "abcd1234!" }),
         });
 
-        const token = await provider.logIn(req, globalCfg);
+        const payload = await provider.logIn(req, globalCfg);
 
-        expect(token).not.toBeNull();
+        expect(payload).not.toBeNull();
 
-        const session = await verify(token!, globalCfg.secret.toString());
+        const { session, token } = payload!;
+
+        expect(verify.bind(undefined, token, globalCfg.secret.toString())).not.toBeNull();
 
         expect(session).toMatchObject({
             id: "some user",
@@ -95,11 +97,13 @@ describe("Tests if the credentials provider works", () => {
             body: encodeURIComponent("email=bob.b@somedomain.com&password=abcd1234!"),
         });
 
-        const token = await provider.logIn(req, globalCfg);
+        const payload = await provider.logIn(req, globalCfg);
 
-        expect(token).not.toBeNull();
+        expect(payload).not.toBeNull();
 
-        const session = await verify(token!, globalCfg.secret.toString());
+        const { session, token } = payload!;
+
+        expect(verify.bind(undefined, token, globalCfg.secret.toString())).not.toBeNull();
 
         expect(session).toMatchObject({
             id: "some user",
@@ -142,11 +146,13 @@ describe("Tests if the credentials provider works", () => {
             body,
         });
 
-        const token = await provider.logIn(req, globalCfg);
+        const payload = await provider.logIn(req, globalCfg);
 
-        expect(token).not.toBeNull();
+        expect(payload).not.toBeNull();
 
-        const session = await verify(token!, globalCfg.secret.toString());
+        const { session, token } = payload!;
+
+        expect(verify.bind(undefined, token, globalCfg.secret.toString())).not.toBeNull();
 
         expect(session).toMatchObject({
             id: "some user",

@@ -6,21 +6,6 @@ import { sign, verify } from "../functions/jwt";
 import { type Callbacks, IStrategy } from "./IStrategy";
 
 /**
- * Retrieves either the secret or a private key, depending on the used JWT algorithm
- * @param secret Secret key, or key pair
- * @returns The secret or private key
- */
-const secretOrPrivateKey = (secret: ConfigOptions["secret"]) =>
-    typeof secret === "string" ? secret : secret.privateKey;
-
-/**
- * Retrieves either the secret or a public key, depending on the used JWT algorithm
- * @param secret Secret key, or key pair
- * @returns The secret or public key
- */
-const secretOrPublicKey = (secret: ConfigOptions["secret"]) => (typeof secret === "string" ? secret : secret.publicKey);
-
-/**
  * Basic JWT strategy
  */
 class JWT extends IStrategy {
@@ -44,12 +29,12 @@ class JWT extends IStrategy {
         }
 
         // Directly call the sign function, but make it async.
-        return Promise.resolve(sign(session, secretOrPrivateKey(globalCfg.secret), this.signOptions));
+        return Promise.resolve(sign(session, globalCfg.secret, this.signOptions));
     }
 
     public override deserialize(token: string, globalCfg: ConfigOptions): Promise<Session | null> {
         // The verify function does everything for us, in this case.
-        return verify<Session>(token, secretOrPublicKey(globalCfg.secret)).then(async (session) => {
+        return verify<Session>(token, globalCfg.secret).then(async (session) => {
             if (session == null) return null;
             const isValid = await Promise.resolve(this.callbacks.deserialize?.(token, session) ?? true);
             return isValid ? session : null;
