@@ -1,8 +1,9 @@
-import { JWT } from "../../src/strategies";
-import { verify } from "../../src/functions";
 import { describe, expect, test } from "vitest";
-import { Credentials } from "../../src/providers";
+
 import { ConfigOptions } from "../../src/@types/internals";
+import { verify } from "../../src/functions";
+import { Credentials } from "../../src/providers";
+import { JWT } from "../../src/strategies";
 
 describe("Tests if the credentials provider works", () => {
     test("Login returns a valid session token", async () => {
@@ -13,7 +14,6 @@ describe("Tests if the credentials provider works", () => {
             strategy: new JWT(),
             callbacks: {
                 login: () => true,
-                logout: () => {},
             },
             providers: [
                 new Credentials({
@@ -26,6 +26,7 @@ describe("Tests if the credentials provider works", () => {
         const provider = globalCfg.providers[0];
 
         const req = new Request("http://localhost:3000", {
+            method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: "bob.b@somedomain.com", password: "abcd1234!" }),
         });
@@ -48,7 +49,6 @@ describe("Tests if the credentials provider works", () => {
             strategy: new JWT(),
             callbacks: {
                 login: () => true,
-                logout: () => {},
             },
             providers: [
                 new Credentials({
@@ -61,6 +61,7 @@ describe("Tests if the credentials provider works", () => {
         const provider = globalCfg.providers[0];
 
         const req = new Request("http://localhost:3000", {
+            method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: "bob.b@somedomain.com", password: "abcd1234!" }),
         });
@@ -77,7 +78,6 @@ describe("Tests if the credentials provider works", () => {
             strategy: new JWT(),
             callbacks: {
                 login: () => false,
-                logout: () => {},
             },
             providers: [
                 new Credentials({
@@ -90,6 +90,7 @@ describe("Tests if the credentials provider works", () => {
         const provider = globalCfg.providers[0];
 
         const req = new Request("http://localhost:3000", {
+            method: "POST",
             headers: { "Content-Type": "application/x-www-urlencoded" },
             body: encodeURIComponent("email=bob.b@somedomain.com&password=abcd1234!"),
         });
@@ -112,7 +113,6 @@ describe("Tests if the credentials provider works", () => {
             strategy: new JWT(),
             callbacks: {
                 login: () => false,
-                logout: () => {},
             },
             providers: [
                 new Credentials({
@@ -160,7 +160,6 @@ describe("Tests if the credentials provider works", () => {
             strategy: new JWT(),
             callbacks: {
                 login: () => false,
-                logout: () => {},
             },
             providers: [
                 new Credentials({

@@ -1,10 +1,10 @@
+import { type Get, params, type UniversalHandler } from "@universal-middleware/core";
+import { serialize as serializeCookie } from "cookie";
 import Cookies from "universal-cookie";
-import { serialize as cookie } from "cookie";
-import type { Actions } from "./providers/IProvider";
-import type { ConfigOptions, Maybe } from "./@types/internals";
-import { assign, find, isNil, isString, merge } from "lodash-es";
+
 import type { ConfigOptionsProps, Session } from "./@types/globals";
-import { type UniversalHandler, type Get, params } from "@universal-middleware/core";
+import type { ConfigOptions, Maybe } from "./@types/internals";
+import type { Actions } from "./providers/IProvider";
 
 /**
  * Deserialize a user's session based of the headers
@@ -16,7 +16,7 @@ const getSession = async <T extends Session = Session>(
     globalCfg: ConfigOptions,
     req: { headers: Maybe<Headers | Record<string, string>> },
 ) => {
-    if (isNil(req.headers))
+    if (req.headers == null)
         return {
             session: null,
             token: null,
@@ -26,7 +26,7 @@ const getSession = async <T extends Session = Session>(
     const cookieHeader = req.headers instanceof Headers ? req.headers.get("cookie") : req.headers["cookie"];
 
     const cookie = new Cookies(cookieHeader);
-    if (isNil(cookie))
+    if (cookie == null)
         return {
             session: null,
             token: null,
@@ -34,7 +34,7 @@ const getSession = async <T extends Session = Session>(
 
     // Tries to extract the specific cookie.
     const token = cookie.get(globalCfg.cookieName);
-    if (isNil(token))
+    if (token == null)
         return {
             session: null,
             token: null,
@@ -55,17 +55,17 @@ const getSession = async <T extends Session = Session>(
 export const CreateAuth = ((config) => {
     const { secret, strategy, cookieName, providers, cookieSettings, basePath, callbacks } = config;
 
-    if (isNil(secret)) {
+    if (secret == null) {
         throw new Error('[ERROR]: Auth secret missing! Make sure to set the "secret" variable in the auth\'s config.');
     }
 
-    if (isNil(strategy)) {
+    if (strategy == null) {
         throw new Error('[ERROR]: No strategy chosen! Make sure to set the "strategy" variable in the auth\'s config.');
     }
 
     // We set the global config on startup, and not on the route handler,
     // otherwise a session cannot be accessed until someone logs in
-    const globalCfg: ConfigOptions = {
+    const globalCfg = {
         cookieName: cookieName ?? "orange.auth",
         providers: providers ?? [],
         secret,
@@ -77,19 +77,24 @@ export const CreateAuth = ((config) => {
             secure: true,
             maxAge: 3600,
         },
-        callbacks: merge({}, { login: () => ({}), logout: () => ({}) }, callbacks),
-    };
+        callbacks,
+    } satisfies ConfigOptions;
 
     return {
         /**
          * Universal handler route. You can use this with the `createHandler()` method
-         * @returns 
+         * @returns
          */
         handler: () => async (req, _, runtime) => {
+            if (req.method.toUpperCase() !== "POST") {
+                // Do not accept other methods
+                return new Response("Method Not Allowed", { status: 405 });
+            }
+
             // Tries to get the action and provider info from the url
             const routeParams = params(req, runtime, basePath);
 
-            if (isNil(routeParams?.["action"]) || isNil(routeParams["provider"])) {
+            if (routeParams?.["action"] == null || routeParams["provider"] == null) {
                 throw new Error(
                     '[ERROR]: Base path is missing! Make sure to set the "basePath" variable in the auth\'s config.',
                 );
@@ -97,9 +102,9 @@ export const CreateAuth = ((config) => {
 
             // Finds the requested provider by name
             const path = routeParams["provider"];
-            const provider = find(providers, (p) => p.ID === path);
+            const provider = providers.find((p) => p.ID === path);
 
-            if (isNil(provider)) {
+            if (provider == null) {
                 return new Response("Page not found", { status: 404 });
             }
 
@@ -110,21 +115,21 @@ export const CreateAuth = ((config) => {
                     const token = await provider.logIn(req, globalCfg).catch(() => null);
 
                     // If failed, return Bad Request response
-                    if (isNil(token)) return new Response(null, { status: 400 });
+                    if (token == null) return new Response(null, { status: 400 });
 
                     const params = await getSession(globalCfg, {
                         // The cookie header is faked here, since the request does not have any token yet.
-                        headers: { cookie: cookie(globalCfg.cookieName, token) },
+                        headers: { cookie: serializeCookie(globalCfg.cookieName, token) },
                     });
 
                     // If there is no session at this point, something as gone wrong
-                    if (isNil(params.session) || isNil(params.token)) {
+                    if (params.session == null || params.token == null) {
                         console.error("[AUTH ERROR]: Missing session after login");
                         return new Response("internal server error", { status: 500 });
                     }
 
                     // Run the login callback
-                    const customRes = await globalCfg.callbacks.login({
+                    const customRes = await globalCfg.callbacks?.login?.({
                         headers: req.headers,
                         token: params.token,
                         session: params.session,
@@ -136,7 +141,7 @@ export const CreateAuth = ((config) => {
                     }
 
                     // If the result is a string, assume it is a redirection path
-                    if (isString(customRes)) {
+                    if (typeof customRes === "string") {
                         const headers = new Headers();
                         headers.set("Location", customRes);
 
@@ -145,7 +150,7 @@ export const CreateAuth = ((config) => {
 
                     // Creates the set-cookie header
                     const headers = new Headers();
-                    headers.set("Set-Cookie", cookie(globalCfg.cookieName, token, globalCfg.cookieSettings));
+                    headers.set("Set-Cookie", serializeCookie(globalCfg.cookieName, token, globalCfg.cookieSettings));
 
                     // And return it
                     return new Response(null, { status: 200, headers });
@@ -154,8 +159,8 @@ export const CreateAuth = ((config) => {
                     const params = await getSession(globalCfg, req);
 
                     // If there is no session, no need to call the callback
-                    if (!isNil(params.session) && !isNil(params.token)) {
-                        await globalCfg.callbacks.logout({
+                    if (params.session != null && params.token != null) {
+                        await globalCfg.callbacks?.logout?.({
                             headers: req.headers,
                             token: params.token,
                             session: params.session,
@@ -169,14 +174,15 @@ export const CreateAuth = ((config) => {
                     const headers = new Headers();
                     headers.set(
                         "Set-Cookie",
-                        cookie(
+                        serializeCookie(
                             globalCfg.cookieName,
                             "deleted",
                             // Use the same cookie config, but make sure it is expired
-                            assign({}, globalCfg.cookieSettings, {
+                            {
+                                ...globalCfg.cookieSettings,
                                 expires: new Date(0),
                                 maxAge: undefined,
-                            }),
+                            },
                         ),
                     );
 

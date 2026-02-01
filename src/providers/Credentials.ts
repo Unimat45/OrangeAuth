@@ -1,8 +1,7 @@
-import { isNil } from "lodash-es";
-import { IProvider } from "./IProvider";
-import { urlencodedToJson } from "../functions";
+import type { MaybePromise, Session } from "../@types/globals";
 import type { ConfigOptions } from "../@types/internals";
-import type { Session, MaybePromise } from "../@types/globals";
+import { urlencodedToJson } from "../functions";
+import { IProvider } from "./IProvider";
 
 /**
  * Configuration options of the Credentials provider
@@ -50,8 +49,10 @@ export class Credentials<TCredentials extends string = string> extends IProvider
                 body = await req.text().then(urlencodedToJson<Record<TCredentials, string>>);
                 break;
             case "multipart/form-data":
-                const data = await req.formData();
-                body = Object.fromEntries(data) as Record<TCredentials, string>;
+                {
+                    const data = await req.formData();
+                    body = Object.fromEntries(data) as Record<TCredentials, string>;
+                }
                 break;
             // fields should come from a form, so every un-supported types will be failing.
             case "text/plain":
@@ -61,7 +62,7 @@ export class Credentials<TCredentials extends string = string> extends IProvider
 
         // Calls the user defined authorize callback
         const session = await this.config.authorize(body);
-        if (isNil(session)) return null;
+        if (session == null) return null;
 
         // Create a token
         return globalCfg.strategy.serialize(session, globalCfg).catch((err) => {

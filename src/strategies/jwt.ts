@@ -1,23 +1,24 @@
-import { isNil, isString } from "lodash-es";
-import { verify, sign } from "../functions/jwt";
 import type { SignOptions } from "jsonwebtoken";
+
 import type { Session } from "../@types/globals";
-import { IStrategy, type Callbacks } from "./IStrategy";
 import type { ConfigOptions } from "../@types/internals";
+import { sign, verify } from "../functions/jwt";
+import { type Callbacks, IStrategy } from "./IStrategy";
 
 /**
  * Retrieves either the secret or a private key, depending on the used JWT algorithm
  * @param secret Secret key, or key pair
  * @returns The secret or private key
  */
-const secretOrPrivateKey = (secret: ConfigOptions["secret"]) => (isString(secret) ? secret : secret.privateKey);
+const secretOrPrivateKey = (secret: ConfigOptions["secret"]) =>
+    typeof secret === "string" ? secret : secret.privateKey;
 
 /**
  * Retrieves either the secret or a public key, depending on the used JWT algorithm
  * @param secret Secret key, or key pair
  * @returns The secret or public key
  */
-const secretOrPublicKey = (secret: ConfigOptions["secret"]) => (isString(secret) ? secret : secret.publicKey);
+const secretOrPublicKey = (secret: ConfigOptions["secret"]) => (typeof secret === "string" ? secret : secret.publicKey);
 
 /**
  * Basic JWT strategy
@@ -49,7 +50,7 @@ class JWT extends IStrategy {
     public override deserialize(token: string, globalCfg: ConfigOptions): Promise<Session | null> {
         // The verify function does everything for us, in this case.
         return verify<Session>(token, secretOrPublicKey(globalCfg.secret)).then(async (session) => {
-            if (isNil(session)) return null;
+            if (session == null) return null;
             const isValid = await Promise.resolve(this.callbacks.deserialize?.(token, session) ?? true);
             return isValid ? session : null;
         });
