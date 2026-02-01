@@ -1,6 +1,7 @@
-import { JWT } from "../../src/strategies";
 import { describe, expect, test } from "vitest";
+
 import { ConfigOptions } from "../../src/@types/internals";
+import { JWT } from "../../src/strategies";
 
 describe("Test if the JWT strategy is working", () => {
     test("Serializing", async () => {
@@ -11,7 +12,6 @@ describe("Test if the JWT strategy is working", () => {
             strategy: new JWT(),
             callbacks: {
                 login: () => false,
-                logout: () => {},
             },
             providers: [],
         };
@@ -29,7 +29,6 @@ describe("Test if the JWT strategy is working", () => {
             strategy: new JWT(undefined, { serialize: () => false }),
             callbacks: {
                 login: () => false,
-                logout: () => {},
             },
             providers: [],
         };
@@ -47,7 +46,6 @@ describe("Test if the JWT strategy is working", () => {
             strategy: new JWT(),
             callbacks: {
                 login: () => false,
-                logout: () => {},
             },
             providers: [],
         };
@@ -72,7 +70,6 @@ describe("Test if the JWT strategy is working", () => {
             strategy: new JWT(undefined, { deserialize: () => false }),
             callbacks: {
                 login: () => false,
-                logout: () => {},
             },
             providers: [],
         };
@@ -95,7 +92,6 @@ describe("Test if the JWT strategy is working", () => {
             strategy: new JWT(),
             callbacks: {
                 login: () => false,
-                logout: () => {},
             },
             providers: [],
         };
@@ -117,7 +113,6 @@ describe("Test if the JWT strategy is working", () => {
             strategy: new JWT(),
             callbacks: {
                 login: () => false,
-                logout: () => {},
             },
             providers: [],
         };

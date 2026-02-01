@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+
 import { urlencodedToJson } from "../../src/functions";
 
 describe("Test if converting to JSON from a urlencoded works", () => {
@@ -19,7 +20,7 @@ describe("Test if converting to JSON from a urlencoded works", () => {
 
         expect(result).toMatchObject({
             email: "bob.b@somedomain.com",
-            userName: "Bob"
+            userName: "Bob",
         });
     });
     test("An empty string", () => {

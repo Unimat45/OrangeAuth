@@ -1,0 +1,29 @@
+name: Run linter and test build before merge
+
+on:
+    pull_request:
+        branches:
+            - dev
+            - main
+
+permissions:
+    contents: read
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: 1.3.8
+                  no-cache: false
+
+            - name: Install deps
+              run: bun ci
+
+            - name: Run linter
+              run: bun lint && bun prettier:check
+
+            - name: Test build
+              run: bun run build
