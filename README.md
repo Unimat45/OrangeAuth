@@ -1,25 +1,33 @@
 # 🍊 Orange Auth
 
-### THIS IS A VERY EARLY WIP, AND SHOULD NOT BE USED IN PRODUCTION
+[![npm version](https://img.shields.io/npm/v/orange-auth?color=orange&logo=npm)](https://www.npmjs.com/package/orange-auth)
+[![License](https://img.shields.io/github/license/Unimat45/OrangeAuth?color=blue)](./COPYING)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Unimat45/OrangeAuth/.github/workflows/publish.yaml?branch=dev&logo=github)
 
-Authentication middleware for [@universal-middleware/core](https://www.npmjs.com/package/@universal-middleware/core), supporting provider-based login/logout and strategy-driven session handling via secure cookies.
 
-## 🚀 Features
+> **⚠️ Early WIP:** This project is experimental and not ready for production use.  
+> Use at your own risk.
 
-- Provider-based login/logout flow
-- Pluggable strategies (e.g. JWT)
-- Secure cookie-based session storage
-- Simple, composable handler with session retrieval
-- Optional cookie settings
-- Framework-agnostic
+**OrangeAuth** is a framework-agnostic, modular authentication middleware for Node.js & TypeScript.  
+It provides a clean workflow for session handling, provider-based login/logout, cookie storage, and customizable strategies.
 
-## 📦 Install
+---
+
+## 🔍 Features
+
+- 🧩 **Provider-based Auth:** Plug in local credentials, OAuth providers, etc.
+- 🔑 **Strategies:** Swap how sessions are created, verified, and serialized (e.g., JWT).
+- 🍪 **Secure Cookies:** Built-in cookie handling with sensible defaults.
+- 🛠️ **Framework-agnostic:** Works with many routing layers via adapters (e.g., Express).
+- 📦 **Modular API:** Add or customize providers and strategies easily.
+
+## 🚀 Installation
 
 ```bash
 npm install orange-auth
 ```
 
-## 🧠 Usage
+## 🧠 Quick Usage
 
 ### Setup
 
@@ -29,18 +37,14 @@ import { JWT } from "orange-auth/strategies";
 import { Credentials } from "orange-auth/providers";
 
 const { handler, getSession } = CreateAuth({
-  providers: [new Credentials({ ... })],
-  strategy: new JWT({ ... }),
+  providers: [new Credentials({ /* options */ })],
+  strategy: new JWT({ /* jwt options */ }),
   secret: "your-secret",
-  basePath: "/api/auth/:action/:provider",
+  basePath: "/api/auth",
 });
 ```
 
-You can now use:
-- `POST /api/auth/login/:provider`
-- `POST /api/auth/logout/:provider`
-
-### Example (express middleware router)
+### Using with Express
 
 ```ts
 import express from "express";
@@ -48,14 +52,25 @@ import { handler } from "./auth";
 import { createHandler } from "@universal-middleware/express";
 
 const app = express();
-app.get("/api/auth/{*auth}", createHandler(handler)());
+
+// Attach auth handler on `/api/auth/*`
+app.all("/api/auth/*", createHandler(handler)());
 ```
 
-## 🧾 Session Access
+## 📡 Available Endpoints
+
+Once configured, your handlers expose:
+
+| Method | Path                         | Action                |
+| ------ | ---------------------------- | --------------------- |
+| POST   | `/api/auth/login/:provider`  | Login via provider    |
+| POST   | `/api/auth/logout/:provider` | Log out from provider |
+
+## 🧩 Session Access
+
+You can retrieve session data programmatically:
 
 ```ts
-import { getSession } from "./auth";
-
 const session = await getSession(req);
 
 if (session) {
@@ -63,115 +78,57 @@ if (session) {
 }
 ```
 
-## 🧩 Config Options
+## ⚙️ Configuration
 
-```ts
-type ConfigOptionsProps = {
-    /**
-     * All the available providers.
-     * If multiple instance of a single provider are used with the same name, the order does matter.
-     */
-    providers: IProvider[];
+### `CreateAuth` Options
 
-    /**
-     * Your secret key.
-     */
-    secret: string;
+| Option            | Type          | Description                                       |
+| ----------------- | ------------- | ------------------------------------------------- |
+| `providers`       | `IProvider[]` | List of auth providers (e.g., Credentials, OAuth) |
+| `strategy`        | `IStrategy`   | Strategy for token/session (JWT, etc.)            |
+| `secret`          | `string`      | Secret key for signing/validation                 |
+| `basePath`        | `string`      | API route prefix for auth                         |
+| `cookieName?`     | `string`      | Custom cookie key (defaults to `orange.auth`)     |
+| `cookieSettings?` | `object`      | Cookie serialization options                      |
 
-    /**
-     * A custom name for the cookie.
-     * Otherwise, the default name will be `orange.auth`
-     */
-    cookieName?: string;
+⚠️ Providers and strategies are designed to be modular — you can write your own by implementing the relevant interfaces.
 
-    /**
-     * The strategy to be used.
-     */
-    strategy: IStrategy;
+## 📌 When to Use
 
-    /**
-     * This should be the url path that your auth is set up on, including the action and provider variables.
-     * @example
-     * ```js
-     * const app = express();
-     * 
-     * const { handler } = CreateAuth({
-     *   basePath: "/api/auth/:action/:provider",
-     *   ...
-     * });
-     *
-     * app.all("/api/auth/{*auth}", createHandler(handler)());
-     * ```
-     */
-    basePath: string;
+OrangeAuth fits well when you want:
 
-    /**
-     * Cookie serialization options. see [MDN Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies)
-     */
-    cookieSettings?: SerializeOptions;
-};
-```
+* A **flexible auth layer** for APIs (REST or serverless)
+* A **strategy-agnostic session store** (e.g., JWT, encrypted tokens)
+* A **provider pattern** instead of monolithic auth
 
-## 🧱 Interfaces
+## 📚 Roadmap
 
-### IProvider
+Future improvements might include:
 
-```ts
-abstract class IProvider {
-    /**
-     * Custom name for a provider
-     */
-    ID: string;
+* 👤 Additional built-in provider support (OAuth2, OpenID)
+* 🧪 Built-in test helpers and mocks
+* 🌐 Better TypeScript typings for providers
+* 🔌 Framework adapters (Fastify, Next.js, etc.)
 
-    /**
-     * Login function. This is used to call all the login flows of each provider.
-     * For now, the request's body **MUST** be JSON.
-     * @param req The request object.
-     * @param globalCfg The global auth config.
-     */
-    logIn(req: Request, globalCfg: ConfigOptions): Promise<string | null>;
-}
-```
+## 🤝 Contributing
 
-### IStrategy
+1. Fork the repository.
+2. Create a feature branch:
 
-```ts
-abstract class IStrategy {
-    /**
-     * Handles how a session token is generated.
-     * @param session The validated session object.
-     * @param globalCfg The global auth config.
-     * @returns A newly generated token that will be sent as a cookie.
-     */
-    serialize(session: Session, globalCfg: ConfigOptions): Promise<string>;
+   ```bash
+   git checkout -b feature/my-awesome-change
+   ```
+3. Make your changes, add tests, update docs.
+4. Submit a pull request.
 
-    /**
-     * Handles how a token is validated and deserialized into a session object.
-     * @param token A user's token.
-     * @param globalCfg The global auth config.
-     * @returns A user's session if validated and found, else `null`.
-     */
-    deserialize(token: string, globalCfg: ConfigOptions): Promise<Session | null>;
+We welcome enhancements, bug fixes, and docs improvements!
 
-    /**
-     * Handles how a session is destroyed when a user is logging out.
-     * @param req The request object.
-     * @param globalCfg The global auth config.
-     */
-    logOut(req: Request, globalCfg: ConfigOptions): Promise<void>;
-}
-```
+## 📄 License
 
----
+This project is licensed under the **GNU General Public License v3.0 or later (GPL-3.0+)**.
 
-## 🔐 Cookie Defaults
+You are free to use, modify, and redistribute this software under the terms of the GPL, provided that any derivative work is also distributed under the same license.
 
-By default, the cookie is:
+See the [COPYING](./COPYING) file for full details.
 
-- `httpOnly: true`
-- `secure: true`
-- `sameSite: "lax"`
-- `path: "/"`
-- `maxAge: 3600` (1 hour)
-
-This can be customized via `cookieSettings` in the initial config.
+© Unimat45
