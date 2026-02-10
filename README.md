@@ -32,7 +32,7 @@ const { handler, getSession } = CreateAuth({
   providers: [new Credentials({ ... })],
   strategy: new JWT({ ... }),
   secret: "your-secret",
-  basePath: "/api/auth/:action/:provider",
+  basePath: "/api/auth",
 });
 ```
 
@@ -48,7 +48,7 @@ import { handler } from "./auth";
 import { createHandler } from "@universal-middleware/express";
 
 const app = express();
-app.get("/api/auth/{*auth}", createHandler(handler)());
+app.get("/api/auth/*", createHandler(handler)());
 ```
 
 ## 🧾 Session Access

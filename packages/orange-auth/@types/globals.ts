@@ -59,17 +59,17 @@ export type ConfigOptionsProps = Readonly<{
     strategy: IStrategy;
 
     /**
-     * This should be the url path that your auth is set up on, including the action and provider variables.
+     * This should be the url path that your auth is set up on.
      * @example
      * ```js
      * const app = express();
      *
      * const { handler } = CreateAuth({
-     *   basePath: "/api/auth/:action/:provider",
+     *   basePath: "/api/auth",
      *   ...
      * });
      *
-     * app.all("/api/auth/{*auth}", createHandler(handler)());
+     * app.all("/api/auth/*", createHandler(handler)());
      * ```
      */
     basePath: string;

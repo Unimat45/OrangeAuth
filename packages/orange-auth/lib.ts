@@ -1,5 +1,7 @@
 import { type Get, params, type UniversalHandler } from "@universal-middleware/core";
+import { join } from "node:path/posix";
 
+import type { ClientConfigOptions } from "../client/@types/globals";
 import type { ConfigOptionsProps, Session } from "./@types/globals";
 import type { ConfigOptions, Maybe } from "./@types/internals";
 import * as actions from "./actions/index";
@@ -12,7 +14,10 @@ import type { Actions } from "./providers/IProvider";
  * @returns A session if found and valid, or `null`.
  */
 export const CreateAuth = ((config) => {
-    const { secret, strategy, cookieName, providers, cookieSettings, basePath, callbacks } = config;
+    const { secret, strategy, cookieName, providers, cookieSettings, basePath: basePathAsProp, callbacks } = config;
+
+    // Adds the dynamic actions to the base url
+    const basePath = join(basePathAsProp, ":action", ":provider");
 
     if (secret == null) {
         throw new Error('[ERROR]: Auth secret missing! Make sure to set the "secret" variable in the auth\'s config.');
@@ -29,12 +34,13 @@ export const CreateAuth = ((config) => {
         providers: providers ?? [],
         secret,
         strategy,
-        cookieSettings: cookieSettings ?? {
+        cookieSettings: {
             path: "/",
             httpOnly: true,
             sameSite: "lax",
             secure: true,
             maxAge: 3600,
+            ...cookieSettings,
         },
         callbacks,
     } satisfies ConfigOptions;
@@ -79,6 +85,11 @@ export const CreateAuth = ((config) => {
             // Handles each action independently
             return Promise.resolve(action({ globalCfg, provider, req }));
         },
+        clientConfig: {
+            basePath: config.basePath,
+            providers: globalCfg.providers.map((p) => p.ID),
+            cookieName: globalCfg.cookieName,
+        },
         /**
          * Deserialize a user's session.
          * @param globalCfg The global auth config
@@ -92,6 +103,7 @@ export const CreateAuth = ((config) => {
 }) satisfies Get<
     [config: ConfigOptionsProps],
     {
+        clientConfig: ClientConfigOptions;
         handler: Get<[], UniversalHandler>;
         getSession: (req: { headers: Maybe<Headers | Record<string, string>> }) => Promise<Session | null>;
     }

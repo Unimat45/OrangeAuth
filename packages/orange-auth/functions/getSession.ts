@@ -15,7 +15,7 @@ async function getSession(globalCfg: ConfigOptions, req: { headers: Maybe<Header
             token: null,
         };
 
-    const r = new Request("/null", { headers: req.headers });
+    const r = new Request("http://localhost", { headers: req.headers });
 
     // Tries to extract the specific cookie.
     const cookie = getCookie(r, globalCfg.cookieName);

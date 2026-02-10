@@ -10,8 +10,7 @@
 
         "declaration": true,
         "declarationMap": true,
-        "outDir": "dist",
-        "rootDir": "src",
+        "noEmit": true,
 
         "newLine": "lf",
 
@@ -41,6 +40,5 @@
 
         "skipLibCheck": true
     },
-    "include": ["src/**/*"],
     "exclude": ["node_modules", "**/__tests__/*"]
 }
