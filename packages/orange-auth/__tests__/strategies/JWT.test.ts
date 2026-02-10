@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { ConfigOptions } from "../../src/@types/internals";
-import { JWT } from "../../src/strategies";
+import { ConfigOptions } from "../../@types/internals";
+import { JWT } from "../../strategies";
 
 describe("Test if the JWT strategy is working", () => {
     test("Serializing", async () => {

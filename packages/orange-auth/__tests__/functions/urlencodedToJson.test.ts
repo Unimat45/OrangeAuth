@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { urlencodedToJson } from "../../src/functions";
+import { urlencodedToJson } from "../../functions";
 
 describe("Test if converting to JSON from a urlencoded works", () => {
     test("A good string", () => {

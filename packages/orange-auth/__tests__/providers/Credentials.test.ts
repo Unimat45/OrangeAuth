@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { ConfigOptions } from "../../src/@types/internals";
-import { verify } from "../../src/functions";
-import { Credentials } from "../../src/providers";
-import { JWT } from "../../src/strategies";
+import { ConfigOptions } from "../../@types/internals";
+import { verify } from "../../functions";
+import { Credentials } from "../../providers";
+import { JWT } from "../../strategies";
 
 describe("Tests if the credentials provider works", () => {
     test("Login returns a valid session token", async () => {
