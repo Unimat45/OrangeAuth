@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/orange-auth?color=orange&logo=npm)](https://www.npmjs.com/package/orange-auth)
 [![License](https://img.shields.io/github/license/Unimat45/OrangeAuth?color=blue)](./COPYING)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Unimat45/OrangeAuth/.github/workflows/publish.yaml?branch=dev&logo=github)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Unimat45/OrangeAuth/.github/workflows/publish.yaml?branch=main&logo=github)
 
 
 > **⚠️ Early WIP:** This project is experimental and not ready for production use.  
