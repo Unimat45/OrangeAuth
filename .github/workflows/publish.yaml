@@ -5,6 +5,7 @@ on:
             - main
 jobs:
     build:
+        environment: Admin DEV
         runs-on: ubuntu-latest
         permissions:
             contents: read
